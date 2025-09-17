@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quote Explorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold text-center mb-6">Quote Explorer</h1>
+
+    <!-- Controls -->
+    <div class="flex flex-col md:flex-row gap-4 mb-6">
+      <select id="databaseSelect" class="p-2 border rounded-md">
+        <option value="en.db">English Quotes (en.db)</option>
+        <option value="quote.db">General Quotes (quote.db)</option>
+      </select>
+      <select id="modeSelect" class="p-2 border rounded-md">
+        <option value="daily">Daily Quote</option>
+        <option value="all">All Quotes</option>
+      </select>
+      <select id="categoryFilter" class="p-2 border rounded-md hidden">
+        <option value="">All Categories</option>
+      </select>
+      <select id="authorFilter" class="p-2 border rounded-md hidden">
+        <option value="">All Authors</option>
+      </select>
+    </div>
+
+    <!-- Quote Display -->
+    <div id="quoteContainer" class="grid gap-4">
+      <p class="text-gray-500">Loading...</p>
+    </div>
+  </div>
+
+  <script>
+    // Inline Service Worker
+    if ('serviceWorker' in navigator) {
+      const swContent = `
+        const CACHE_NAME = 'quote-app-v2';
+        const urlsToCache = [
+          'https://cdn.tailwindcss.com',
+          'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.wasm',
+          'en.db',
+          'quote.db'
+        ];
+
+        self.addEventListener('install', event => {
+          event.waitUntil(
+            caches.open(CACHE_NAME).then(cache => {
+              return cache.addAll(urlsToCache);
+            })
+          );
+        });
+
+        self.addEventListener('fetch', event => {
+          event.respondWith(
+            caches.match(event.request).then(response => {
+              return response || fetch(event.request).then(fetchResponse => {
+                return caches.open(CACHE_NAME).then(cache => {
+                  cache.put(event.request, fetchResponse.clone());
+                  return fetchResponse;
+                });
+              });
+            })
+          );
+        });
+
+        self.addEventListener('activate', event => {
+          event.waitUntil(
+            caches.keys().then(cacheNames => {
+              return Promise.all(
+                cacheNames.filter(name => name !== CACHE_NAME)
+                  .map(name => caches.delete(name))
+              );
+            })
+          );
+        });
+      `;
+      const blob = new Blob([swContent], { type: 'application/javascript' });
+      const swURL = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swURL);
+    }
+
+    let db;
+    let currentDbName = 'en.db';
+
+    // Initialize SQL.js and load database
+    async function initDb(dbName) {
+      try {
+        const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` });
+        const response = await fetch(`${dbName}`, { cache: 'force-cache' });
+        const arrayBuffer = await response.arrayBuffer();
+        db = new SQL.Database(new Uint8Array(arrayBuffer));
+        updateUI();
+      } catch (error) {
+        console.error('Error initializing database:', error);
+        document.getElementById('quoteContainer').innerHTML = '<p class="text-red-500">Error loading quotes. Please ensure internet connection for first load.</p>';
+      }
+    }
+
+    // Populate category and author filters
+    function populateFilters() {
+      const categoryStmt = db.prepare('SELECT DISTINCT category_name FROM quote ORDER BY category_name');
+      const categories = [];
+      while (categoryStmt.step()) {
+        categories.push(categoryStmt.getAsObject().category_name);
+      }
+      categoryStmt.free();
+
+      const authorStmt = db.prepare('SELECT DISTINCT author_name FROM quote ORDER BY author_name');
+      const authors = [];
+      while (authorStmt.step()) {
+        authors.push(authorStmt.getAsObject().author_name);
+      }
+      authorStmt.free();
+
+      const categorySelect = document.getElementById('categoryFilter');
+      const authorSelect = document.getElementById('authorFilter');
+      categorySelect.innerHTML = '<option value="">All Categories</option>';
+      authorSelect.innerHTML = '<option value="">All Authors</option>';
+
+      categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+      });
+
+      authors.forEach(author => {
+        const option = document.createElement('option');
+        option.value = author;
+        option.textContent = author;
+        authorSelect.appendChild(option);
+      });
+    }
+
+    // Get current date as YYYY-MM-DD
+    function getCurrentDate() {
+      const today = new Date();
+      return today.toISOString().split('T')[0];
+    }
+
+    // Load and display quotes based on mode
+    function loadQuotes() {
+      const mode = document.getElementById('modeSelect').value;
+      if (mode === 'daily') {
+        displayDailyQuote();
+      } else {
+        displayAllQuotes();
+      }
+    }
+
+    // Display one random quote per day
+    function displayDailyQuote() {
+      const today = getCurrentDate();
+      const storageKey = `dailyQuote_${currentDbName}`;
+      const storedQuote = localStorage.getItem(storageKey);
+      const storedDate = localStorage.getItem(`quoteDate_${currentDbName}`);
+
+      if (storedQuote && storedDate === today) {
+        const quote = JSON.parse(storedQuote);
+        displayQuote(quote);
+        return;
+      }
+
+      const stmt = db.prepare('SELECT author_name, category_name, qte FROM quote ORDER BY RANDOM() LIMIT 1');
+      let quote = null;
+      if (stmt.step()) {
+        quote = stmt.getAsObject();
+      }
+      stmt.free();
+
+      if (quote) {
+        localStorage.setItem(storageKey, JSON.stringify(quote));
+        localStorage.setItem(`quoteDate_${currentDbName}`, today);
+        displayQuote(quote);
+      } else {
+        document.getElementById('quoteContainer').innerHTML = '<p class="text-gray-500">No quotes available.</p>';
+      }
+    }
+
+    // Display all quotes with filters
+    function displayAllQuotes() {
+      const category = document.getElementById('categoryFilter').value;
+      const author = document.getElementById('authorFilter').value;
+
+      let query = 'SELECT author_name, category_name, qte FROM quote';
+      const conditions = [];
+      const params = [];
+
+      if (category) {
+        conditions.push('category_name = ?');
+        params.push(category);
+      }
+      if (author) {
+        conditions.push('author_name = ?');
+        params.push(author);
+      }
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+
+      const stmt = db.prepare(query);
+      if (params.length > 0) {
+        stmt.bind(params);
+      }
+
+      const quotes = [];
+      while (stmt.step()) {
+        quotes.push(stmt.getAsObject());
+      }
+      stmt.free();
+
+      const container = document.getElementById('quoteContainer');
+      container.innerHTML = '';
+
+      if (quotes.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No quotes found.</p>';
+        return;
+      }
+
+      quotes.forEach(quote => {
+        const quoteCard = document.createElement('div');
+        quoteCard.className = 'bg-white p-4 rounded-md shadow-md';
+        quoteCard.innerHTML = `
+          <p class="text-lg italic mb-2">"${quote.qte}"</p>
+          <p class="text-sm font-semibold">— ${quote.author_name}</p>
+          <p class="text-sm text-gray-600">${quote.category_name}</p>
+        `;
+        container.appendChild(quoteCard);
+      });
+    }
+
+    // Display single quote
+    function displayQuote(quote) {
+      const container = document.getElementById('quoteContainer');
+      container.innerHTML = `
+        <div class="bg-white p-4 rounded-md shadow-md">
+          <p class="text-lg italic mb-2">"${quote.qte}"</p>
+          <p class="text-sm font-semibold">— ${quote.author_name}</p>
+          <p class="text-sm text-gray-600">${quote.category_name}</p>
+        </div>
+      `;
+    }
+
+    // Update UI based on mode
+    function updateUI() {
+      const mode = document.getElementById('modeSelect').value;
+      const categoryFilter = document.getElementById('categoryFilter');
+      const authorFilter = document.getElementById('authorFilter');
+
+      if (mode === 'daily') {
+        categoryFilter.classList.add('hidden');
+        authorFilter.classList.add('hidden');
+        displayDailyQuote();
+      } else {
+        categoryFilter.classList.remove('hidden');
+        authorFilter.classList.remove('hidden');
+        populateFilters();
+        displayAllQuotes();
+      }
+    }
+
+    // Event listeners
+    document.getElementById('databaseSelect').addEventListener('change', (e) => {
+      currentDbName = e.target.value;
+      initDb(currentDbName);
+    });
+    document.getElementById('modeSelect').addEventListener('change', updateUI);
+    document.getElementById('categoryFilter').addEventListener('change', loadQuotes);
+    document.getElementById('authorFilter').addEventListener('change', loadQuotes);
+
+    // Initialize with default database
+    initDb(currentDbName);
+  </script>
+</body>
+</html>
