@@ -3,35 +3,184 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quote Explorer</title>
+  <title>Kids' Quote Quest</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Bubblegum Sans', cursive;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #4ecdc4, #a1c4fd);
+      margin: 0;
+      min-height: 100vh;
+      position: relative;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem;
+      position: relative;
+      z-index: 10;
+    }
+    .progress-container {
+      width: 100%;
+      max-width: 800px;
+      background: rgba(255, 255, 255, 0.9);
+      border: 5px solid #ffd700;
+      border-radius: 20px;
+      margin: 1.5rem auto;
+      display: none;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    .progress-bar {
+      height: 40px;
+      background: linear-gradient(90deg, #ff6b6b, #ffd700, #4ecdc4);
+      border-radius: 15px;
+      text-align: center;
+      color: white;
+      font-size: 1.5rem;
+      font-weight: bold;
+      line-height: 40px;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .quote-card {
+      background: rgba(255, 255, 255, 0.95);
+      border: 5px solid #ffd700;
+      border-radius: 20px;
+      padding: 1.5rem;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+      position: relative;
+      margin-bottom: 1.5rem;
+    }
+    .quote-card::before {
+      content: '🌟';
+      position: absolute;
+      top: -15px;
+      right: -15px;
+      font-size: 2.5rem;
+      opacity: 0.4;
+    }
+    .select-box {
+      background: #fff;
+      border: 5px solid #ffd700;
+      border-radius: 15px;
+      padding: 0.75rem;
+      font-size: 1.25rem;
+      color: #333;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      width: 100%;
+    }
+    .title {
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    .loading-text, .error-text, .no-quotes-text {
+      color: white;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .quote-text {
+      color: #d81b60;
+      line-height: 1.4;
+      font-weight: bold;
+      background: rgba(255, 245, 157, 0.8); /* Light yellow background for highlight */
+      padding: 0.5rem;
+      border-radius: 10px;
+    }
+    .author-text {
+      color: #1976d2;
+    }
+    .category-text {
+      color: #7b1fa2;
+    }
+    .toggle-button {
+      background: #ff6b6b;
+      border: 3px solid #ffd700;
+      border-radius: 50%;
+      padding: 0.5rem 0.75rem;
+      color: white;
+      font-size: 1.25rem;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      .title {
+        font-size: 2.5rem;
+      }
+      .select-box {
+        font-size: 1rem;
+        padding: 0.5rem;
+      }
+      .quote-text {
+        font-size: 1.5rem;
+      }
+      .author-text {
+        font-size: 1.25rem;
+      }
+      .category-text {
+        font-size: 1rem;
+      }
+      .progress-bar {
+        font-size: 1rem;
+        height: 30px;
+        line-height: 30px;
+      }
+      .quote-card {
+        padding: 1rem;
+      }
+    }
+    @media (min-width: 769px) {
+      .title {
+        font-size: 4rem;
+      }
+      .select-box {
+        font-size: 1.5rem;
+      }
+      .quote-text {
+        font-size: 2rem;
+      }
+      .author-text {
+        font-size: 1.5rem;
+      }
+      .category-text {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 font-sans">
-  <div class="container mx-auto p-4">
-    <h1 class="text-3xl font-bold text-center mb-6">Quote Explorer</h1>
+<body>
+  <div class="container">
+    <h1 class="title text-3xl md:text-5xl font-bold text-center mb-8">
+      Kids' Quote Quest 🌈
+    </h1>
+
+    <!-- Progress Bar -->
+    <div id="progressContainer" class="progress-container">
+      <div id="progressBar" class="progress-bar">0%</div>
+    </div>
 
     <!-- Controls -->
-    <div class="flex flex-col md:flex-row gap-4 mb-6">
-      <select id="databaseSelect" class="p-2 border rounded-md">
-        <option value="en.db">English Quotes (en.db)</option>
-        <option value="quote.db">General Quotes (quote.db)</option>
+    <div class="flex flex-col md:flex-row gap-4 md:gap-6 mb-8 justify-center flex-wrap">
+      <select id="databaseSelect" class="select-box">
+        <option value="en.db">Super English Quotes</option>
+        <option value="quote.db">Awesome Odia Quotes</option>
       </select>
-      <select id="modeSelect" class="p-2 border rounded-md">
-        <option value="daily">Daily Quote</option>
-        <option value="all">All Quotes</option>
+      <select id="modeSelect" class="select-box">
+        <option value="daily">Daily Magic Quote</option>
+        <option value="all">All Sparkly Quotes</option>
       </select>
-      <select id="categoryFilter" class="p-2 border rounded-md hidden">
-        <option value="">All Categories</option>
+      <select id="categoryFilter" class="select-box hidden">
+        <option value="">All Fun Themes</option>
       </select>
-      <select id="authorFilter" class="p-2 border rounded-md hidden">
-        <option value="">All Authors</option>
+      <select id="authorFilter" class="select-box hidden">
+        <option value="">All Cool Heroes</option>
       </select>
     </div>
 
     <!-- Quote Display -->
-    <div id="quoteContainer" class="grid gap-4">
-      <p class="text-gray-500">Loading...</p>
+    <div id="quoteContainer" class="grid gap-6">
+      <p class="loading-text text-xl md:text-2xl text-center">Loading your magical quotes... 🪄</p>
     </div>
   </div>
 
@@ -39,19 +188,21 @@
     // Inline Service Worker
     if ('serviceWorker' in navigator) {
       const swContent = `
-        const CACHE_NAME = 'quote-app-v2';
+        const CACHE_NAME = 'quote-app-v8';
         const urlsToCache = [
+          '/',
           'https://cdn.tailwindcss.com',
           'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js',
           'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.wasm',
-          'en.db',
-          'quote.db'
+          'https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap',
+          'https://raw.githubusercontent.com/abhayattcc/Daily-quotes/refs/heads/main/en.db',
+          'https://raw.githubusercontent.com/abhayattcc/Daily-quotes/refs/heads/main/quote.db'
         ];
 
         self.addEventListener('install', event => {
           event.waitUntil(
             caches.open(CACHE_NAME).then(cache => {
-              return cache.addAll(urlsToCache);
+              return cache.addAll(urlsToCache).then(() => self.skipWaiting());
             })
           );
         });
@@ -59,10 +210,21 @@
         self.addEventListener('fetch', event => {
           event.respondWith(
             caches.match(event.request).then(response => {
-              return response || fetch(event.request).then(fetchResponse => {
+              if (response) {
+                return response;
+              }
+              return fetch(event.request).then(fetchResponse => {
+                if (!fetchResponse || fetchResponse.status !== 200) {
+                  return fetchResponse;
+                }
                 return caches.open(CACHE_NAME).then(cache => {
                   cache.put(event.request, fetchResponse.clone());
                   return fetchResponse;
+                });
+              }).catch(() => {
+                return caches.match('/').then(response => {
+                  if (response) return response;
+                  return new Response('Offline mode: Please connect to the internet for first load.', { status: 503 });
                 });
               });
             })
@@ -76,7 +238,7 @@
                 cacheNames.filter(name => name !== CACHE_NAME)
                   .map(name => caches.delete(name))
               );
-            })
+            }).then(() => self.clients.claim())
           );
         });
       `;
@@ -87,18 +249,63 @@
 
     let db;
     let currentDbName = 'en.db';
+    const databases = ['en.db', 'quote.db'];
+    const isSpeechSupported = 'speechSynthesis' in window;
+    let currentUtterance = null;
 
-    // Initialize SQL.js and load database
+    // Show progress bar
+    function showProgressBar(percentage) {
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      progressContainer.style.display = 'block';
+      progressBar.style.width = `${percentage}%`;
+      progressBar.textContent = `${Math.round(percentage)}%`;
+      if (percentage >= 100) {
+        setTimeout(() => {
+          progressContainer.style.display = 'none';
+        }, 500);
+      }
+    }
+
+    // Initialize SQL.js and load all databases
     async function initDb(dbName) {
       try {
-        const SQL = await initSqlJs({ locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}` });
-        const response = await fetch(`${dbName}`, { cache: 'force-cache' });
-        const arrayBuffer = await response.arrayBuffer();
-        db = new SQL.Database(new Uint8Array(arrayBuffer));
+        showProgressBar(0);
+        const SQL = await initSqlJs({ 
+          locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
+          cache: 'force-cache' 
+        });
+        showProgressBar(20);
+
+        const totalSteps = databases.length + 2;
+        let currentStep = 1;
+
+        for (const dbFile of databases) {
+          const cache = await caches.open('quote-app-v8');
+          const cachedResponse = await cache.match(`https://raw.githubusercontent.com/abhayattcc/Daily-quotes/refs/heads/main/${dbFile}`);
+          let arrayBuffer;
+          
+          if (cachedResponse) {
+            arrayBuffer = await cachedResponse.arrayBuffer();
+          } else {
+            const response = await fetch(`https://raw.githubusercontent.com/abhayattcc/Daily-quotes/refs/heads/main/${dbFile}`, { cache: 'force-cache' });
+            arrayBuffer = await response.arrayBuffer();
+            await cache.put(`https://raw.githubusercontent.com/abhayattcc/Daily-quotes/refs/heads/main/${dbFile}`, new Response(arrayBuffer));
+          }
+
+          if (dbFile === dbName) {
+            db = new SQL.Database(new Uint8Array(arrayBuffer));
+          }
+          currentStep++;
+          showProgressBar((currentStep / totalSteps) * 100);
+        }
+
         updateUI();
+        showProgressBar(100);
       } catch (error) {
         console.error('Error initializing database:', error);
-        document.getElementById('quoteContainer').innerHTML = '<p class="text-red-500">Error loading quotes. Please ensure internet connection for first load.</p>';
+        document.getElementById('quoteContainer').innerHTML = '<p class="error-text text-xl md:text-2xl text-center">Oops! Something broke. Try connecting to the internet! 😜</p>';
+        showProgressBar(0);
       }
     }
 
@@ -120,8 +327,8 @@
 
       const categorySelect = document.getElementById('categoryFilter');
       const authorSelect = document.getElementById('authorFilter');
-      categorySelect.innerHTML = '<option value="">All Categories</option>';
-      authorSelect.innerHTML = '<option value="">All Authors</option>';
+      categorySelect.innerHTML = '<option value="">All Fun Themes</option>';
+      authorSelect.innerHTML = '<option value="">All Cool Heroes</option>';
 
       categories.forEach(category => {
         const option = document.createElement('option');
@@ -144,13 +351,29 @@
       return today.toISOString().split('T')[0];
     }
 
-    // Load and display quotes based on mode
-    function loadQuotes() {
-      const mode = document.getElementById('modeSelect').value;
-      if (mode === 'daily') {
-        displayDailyQuote();
-      } else {
-        displayAllQuotes();
+    // Toggle play/stop for speech synthesis
+    function toggleSpeech(quoteText, button) {
+      if (isSpeechSupported) {
+        if (currentUtterance && window.speechSynthesis.speaking) {
+          window.speechSynthesis.cancel();
+          currentUtterance = null;
+          button.textContent = '🔊 Play';
+          button.style.background = '#ff6b6b';
+        } else {
+          currentUtterance = new SpeechSynthesisUtterance(quoteText);
+          currentUtterance.lang = currentDbName === 'en.db' ? 'en-US' : 'or-IN';
+          currentUtterance.volume = 1;
+          currentUtterance.rate = 1;
+          currentUtterance.pitch = 1;
+          window.speechSynthesis.speak(currentUtterance);
+          button.textContent = '⏹ Stop';
+          button.style.background = '#1976d2';
+          currentUtterance.onend = () => {
+            button.textContent = '🔊 Play';
+            button.style.background = '#ff6b6b';
+            currentUtterance = null;
+          };
+        }
       }
     }
 
@@ -179,7 +402,7 @@
         localStorage.setItem(`quoteDate_${currentDbName}`, today);
         displayQuote(quote);
       } else {
-        document.getElementById('quoteContainer').innerHTML = '<p class="text-gray-500">No quotes available.</p>';
+        document.getElementById('quoteContainer').innerHTML = '<p class="no-quotes-text text-xl md:text-2xl text-center">No quotes today, come back tomorrow! 😊</p>';
       }
     }
 
@@ -219,17 +442,19 @@
       container.innerHTML = '';
 
       if (quotes.length === 0) {
-        container.innerHTML = '<p class="text-gray-500">No quotes found.</p>';
+        container.innerHTML = '<p class="no-quotes-text text-xl md:text-2xl text-center">No quotes found, try another theme! 🌟</p>';
         return;
       }
 
       quotes.forEach(quote => {
         const quoteCard = document.createElement('div');
-        quoteCard.className = 'bg-white p-4 rounded-md shadow-md';
+        quoteCard.className = 'quote-card';
+        const escapedQuote = quote.qte.replace(/'/g, "\\'");
         quoteCard.innerHTML = `
-          <p class="text-lg italic mb-2">"${quote.qte}"</p>
-          <p class="text-sm font-semibold">— ${quote.author_name}</p>
-          <p class="text-sm text-gray-600">${quote.category_name}</p>
+          <p class="quote-text italic mb-4">"${quote.qte}"</p>
+          <p class="author-text font-bold">— ${quote.author_name}</p>
+          <p class="category-text">${quote.category_name}</p>
+          ${isSpeechSupported ? `<button class="toggle-button mt-4" onclick="toggleSpeech('${escapedQuote}', this)">🔊 Play</button>` : ''}
         `;
         container.appendChild(quoteCard);
       });
@@ -238,11 +463,13 @@
     // Display single quote
     function displayQuote(quote) {
       const container = document.getElementById('quoteContainer');
+      const escapedQuote = quote.qte.replace(/'/g, "\\'");
       container.innerHTML = `
-        <div class="bg-white p-4 rounded-md shadow-md">
-          <p class="text-lg italic mb-2">"${quote.qte}"</p>
-          <p class="text-sm font-semibold">— ${quote.author_name}</p>
-          <p class="text-sm text-gray-600">${quote.category_name}</p>
+        <div class="quote-card">
+          <p class="quote-text italic mb-4">"${quote.qte}"</p>
+          <p class="author-text font-bold">— ${quote.author_name}</p>
+          <p class="category-text">${quote.category_name}</p>
+          ${isSpeechSupported ? `<button class="toggle-button mt-4" onclick="toggleSpeech('${escapedQuote}', this)">🔊 Play</button>` : ''}
         </div>
       `;
     }
@@ -267,12 +494,26 @@
 
     // Event listeners
     document.getElementById('databaseSelect').addEventListener('change', (e) => {
+      if (currentUtterance && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        currentUtterance = null;
+      }
       currentDbName = e.target.value;
       initDb(currentDbName);
     });
     document.getElementById('modeSelect').addEventListener('change', updateUI);
     document.getElementById('categoryFilter').addEventListener('change', loadQuotes);
     document.getElementById('authorFilter').addEventListener('change', loadQuotes);
+
+    // Load and display quotes based on mode
+    function loadQuotes() {
+      const mode = document.getElementById('modeSelect').value;
+      if (mode === 'daily') {
+        displayDailyQuote();
+      } else {
+        displayAllQuotes();
+      }
+    }
 
     // Initialize with default database
     initDb(currentDbName);
