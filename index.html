@@ -6,195 +6,228 @@
   <title>Kids' Quote Quest</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Bubblegum Sans', cursive;
-      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #4ecdc4, #a1c4fd);
+      font-family: 'Comic Neue', cursive;
+      background: #f0f4f8;
       margin: 0;
       min-height: 100vh;
       position: relative;
+      touch-action: manipulation;
     }
     .container {
-      max-width: 1400px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 1.5rem;
+      padding: 1rem;
       position: relative;
       z-index: 10;
     }
     .progress-container {
       width: 100%;
-      max-width: 800px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 5px solid #ffd700;
-      border-radius: 20px;
-      margin: 1.5rem auto;
+      max-width: 600px;
+      background: #ffffff;
+      border: 4px solid #ffca28;
+      border-radius: 15px;
+      margin: 1rem auto;
       display: none;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
     }
     .progress-bar {
-      height: 40px;
-      background: linear-gradient(90deg, #ff6b6b, #ffd700, #4ecdc4);
-      border-radius: 15px;
+      height: 30px;
+      background: #4caf50;
+      border-radius: 10px;
       text-align: center;
       color: white;
-      font-size: 1.5rem;
-      font-weight: bold;
-      line-height: 40px;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      font-size: 1.2rem;
+      line-height: 30px;
     }
     .quote-card {
-      background: rgba(255, 255, 255, 0.95);
-      border: 5px solid #ffd700;
-      border-radius: 20px;
-      padding: 1.5rem;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+      background: #ffffff;
+      border: 4px solid #ffca28;
+      border-radius: 15px;
+      padding: 1rem;
+      margin-bottom: 1rem;
       position: relative;
-      margin-bottom: 1.5rem;
+      overflow: hidden;
     }
     .quote-card::before {
-      content: '🌟';
+      content: '✨';
       position: absolute;
-      top: -15px;
-      right: -15px;
-      font-size: 2.5rem;
-      opacity: 0.4;
+      top: -10px;
+      right: -10px;
+      font-size: 2rem;
+      opacity: 0.3;
     }
     .select-box {
-      background: #fff;
-      border: 5px solid #ffd700;
-      border-radius: 15px;
-      padding: 0.75rem;
-      font-size: 1.25rem;
+      background: #ffffff;
+      border: 4px solid #ffca28;
+      border-radius: 10px;
+      padding: 0.5rem;
+      font-size: 1.2rem;
       color: #333;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
       cursor: pointer;
       width: 100%;
+      transition: transform 0.2s ease;
+    }
+    .select-box:hover {
+      transform: scale(1.05);
     }
     .title {
-      color: white;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      color: #e91e63;
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
     .loading-text, .error-text, .no-quotes-text {
-      color: white;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+      color: #e91e63;
+      text-align: center;
+      font-size: 1.2rem;
     }
     .quote-text {
       color: #d81b60;
-      line-height: 1.4;
+      line-height: 1.5;
       font-weight: bold;
-      background: rgba(255, 245, 157, 0.8); /* Light yellow background for highlight */
+      background: #fffde7;
       padding: 0.5rem;
       border-radius: 10px;
     }
     .author-text {
       color: #1976d2;
+      font-weight: bold;
     }
     .category-text {
       color: #7b1fa2;
     }
     .toggle-button {
-      background: #ff6b6b;
-      border: 3px solid #ffd700;
+      background: #4caf50;
+      border: 3px solid #ffca28;
       border-radius: 50%;
-      padding: 0.5rem 0.75rem;
+      padding: 0.75rem;
       color: white;
-      font-size: 1.25rem;
+      font-size: 1.5rem;
       cursor: pointer;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      transition: transform 0.2s ease;
     }
-    /* Responsive adjustments */
+    .toggle-button:hover {
+      transform: scale(1.1);
+    }
+    .nav-button {
+      background: #2196f3;
+      border: 3px solid #ffca28;
+      border-radius: 10px;
+      padding: 0.5rem 1rem;
+      color: white;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .nav-button:hover {
+      transform: scale(1.05);
+    }
+    .nav-button:disabled {
+      background: #cccccc;
+      cursor: not-allowed;
+      transform: none;
+    }
     @media (max-width: 768px) {
       .title {
-        font-size: 2.5rem;
+        font-size: 2rem;
       }
       .select-box {
         font-size: 1rem;
-        padding: 0.5rem;
+        padding: 0.4rem;
       }
       .quote-text {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
       }
       .author-text {
-        font-size: 1.25rem;
+        font-size: 1rem;
       }
       .category-text {
-        font-size: 1rem;
+        font-size: 0.9rem;
       }
       .progress-bar {
         font-size: 1rem;
-        height: 30px;
-        line-height: 30px;
+        height: 25px;
+        line-height: 25px;
       }
       .quote-card {
-        padding: 1rem;
+        padding: 0.8rem;
+      }
+      .nav-button {
+        font-size: 1rem;
+        padding: 0.4rem;
+      }
+      .toggle-button {
+        font-size: 1.2rem;
+        padding: 0.5rem;
       }
     }
     @media (min-width: 769px) {
       .title {
-        font-size: 4rem;
+        font-size: 3rem;
       }
       .select-box {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
       }
       .quote-text {
-        font-size: 2rem;
-      }
-      .author-text {
         font-size: 1.5rem;
       }
+      .author-text {
+        font-size: 1.2rem;
+      }
       .category-text {
-        font-size: 1.25rem;
+        font-size: 1rem;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 class="title text-3xl md:text-5xl font-bold text-center mb-8">
-      Kids' Quote Quest 🌈
+    <h1 class="title text-2xl md:text-4xl font-bold">
+      Kids' Quote Adventure 🌟
     </h1>
 
-    <!-- Progress Bar -->
     <div id="progressContainer" class="progress-container">
       <div id="progressBar" class="progress-bar">0%</div>
     </div>
 
-    <!-- Controls -->
-    <div class="flex flex-col md:flex-row gap-4 md:gap-6 mb-8 justify-center flex-wrap">
+    <div class="flex flex-col md:flex-row gap-3 md:gap-4 mb-6 justify-center flex-wrap">
       <select id="databaseSelect" class="select-box">
-        <option value="en.db">Super English Quotes</option>
-        <option value="quote.db">Awesome Odia Quotes</option>
+        <option value="en.db">English Quotes</option>
+        <option value="quote.db">Odia Quotes</option>
       </select>
       <select id="modeSelect" class="select-box">
-        <option value="daily">Daily Magic Quote</option>
-        <option value="all">All Sparkly Quotes</option>
+        <option value="daily">Daily Quote</option>
+        <option value="all">All Quotes</option>
       </select>
       <select id="categoryFilter" class="select-box hidden">
-        <option value="">All Fun Themes</option>
+        <option value="">All Themes</option>
       </select>
       <select id="authorFilter" class="select-box hidden">
-        <option value="">All Cool Heroes</option>
+        <option value="">All Heroes</option>
       </select>
     </div>
 
-    <!-- Quote Display -->
-    <div id="quoteContainer" class="grid gap-6">
-      <p class="loading-text text-xl md:text-2xl text-center">Loading your magical quotes... 🪄</p>
+    <div id="quoteContainer" class="grid gap-4">
+      <p class="loading-text text-lg md:text-xl">Loading fun quotes... 🎉</p>
+    </div>
+
+    <div id="navButtons" class="flex justify-between mt-4 hidden">
+      <button id="prevButton" class="nav-button">Back</button>
+      <button id="nextButton" class="nav-button">Next</button>
     </div>
   </div>
 
   <script>
-    // Inline Service Worker
     if ('serviceWorker' in navigator) {
       const swContent = `
-        const CACHE_NAME = 'quote-app-v8';
+        const CACHE_NAME = 'quote-app-v11';
         const urlsToCache = [
           '/',
           'https://cdn.tailwindcss.com',
           'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js',
           'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.wasm',
-          'https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap',
+          'https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap',
           'https://raw.githubusercontent.com/abhayattcc/Daily-quotes/refs/heads/main/en.db',
           'https://raw.githubusercontent.com/abhayattcc/Daily-quotes/refs/heads/main/quote.db'
         ];
@@ -250,10 +283,25 @@
     let db;
     let currentDbName = 'en.db';
     const databases = ['en.db', 'quote.db'];
-    const isSpeechSupported = 'speechSynthesis' in window;
+    const isTTSSupported = 'speechSynthesis' in window;
+    let defaultOdiaVoice = null;
     let currentUtterance = null;
+    let activeUtterances = 0;
+    let quotes = [];
+    let currentPage = 0;
 
-    // Show progress bar
+    function initializeVoices() {
+      if (isTTSSupported && currentDbName === 'quote.db') {
+        const voices = window.speechSynthesis.getVoices();
+        defaultOdiaVoice = voices.find(v => v.lang.startsWith('or') && v.name.includes('Google')) || voices.find(v => v.lang.startsWith('or'));
+      }
+    }
+
+    if (isTTSSupported) {
+      window.speechSynthesis.onvoiceschanged = initializeVoices;
+      initializeVoices();
+    }
+
     function showProgressBar(percentage) {
       const progressContainer = document.getElementById('progressContainer');
       const progressBar = document.getElementById('progressBar');
@@ -267,7 +315,6 @@
       }
     }
 
-    // Initialize SQL.js and load all databases
     async function initDb(dbName) {
       try {
         showProgressBar(0);
@@ -281,7 +328,7 @@
         let currentStep = 1;
 
         for (const dbFile of databases) {
-          const cache = await caches.open('quote-app-v8');
+          const cache = await caches.open('quote-app-v11');
           const cachedResponse = await cache.match(`https://raw.githubusercontent.com/abhayattcc/Daily-quotes/refs/heads/main/${dbFile}`);
           let arrayBuffer;
           
@@ -304,12 +351,11 @@
         showProgressBar(100);
       } catch (error) {
         console.error('Error initializing database:', error);
-        document.getElementById('quoteContainer').innerHTML = '<p class="error-text text-xl md:text-2xl text-center">Oops! Something broke. Try connecting to the internet! 😜</p>';
+        document.getElementById('quoteContainer').innerHTML = '<p class="error-text text-lg md:text-xl">Oops! Something went wrong. Try again! 😊</p>';
         showProgressBar(0);
       }
     }
 
-    // Populate category and author filters
     function populateFilters() {
       const categoryStmt = db.prepare('SELECT DISTINCT category_name FROM quote ORDER BY category_name');
       const categories = [];
@@ -327,8 +373,8 @@
 
       const categorySelect = document.getElementById('categoryFilter');
       const authorSelect = document.getElementById('authorFilter');
-      categorySelect.innerHTML = '<option value="">All Fun Themes</option>';
-      authorSelect.innerHTML = '<option value="">All Cool Heroes</option>';
+      categorySelect.innerHTML = '<option value="">All Themes</option>';
+      authorSelect.innerHTML = '<option value="">All Heroes</option>';
 
       categories.forEach(category => {
         const option = document.createElement('option');
@@ -345,39 +391,42 @@
       });
     }
 
-    // Get current date as YYYY-MM-DD
     function getCurrentDate() {
       const today = new Date();
       return today.toISOString().split('T')[0];
     }
 
-    // Toggle play/stop for speech synthesis
     function toggleSpeech(quoteText, button) {
-      if (isSpeechSupported) {
-        if (currentUtterance && window.speechSynthesis.speaking) {
-          window.speechSynthesis.cancel();
-          currentUtterance = null;
-          button.textContent = '🔊 Play';
-          button.style.background = '#ff6b6b';
-        } else {
-          currentUtterance = new SpeechSynthesisUtterance(quoteText);
-          currentUtterance.lang = currentDbName === 'en.db' ? 'en-US' : 'or-IN';
-          currentUtterance.volume = 1;
-          currentUtterance.rate = 1;
-          currentUtterance.pitch = 1;
-          window.speechSynthesis.speak(currentUtterance);
-          button.textContent = '⏹ Stop';
-          button.style.background = '#1976d2';
-          currentUtterance.onend = () => {
+      if (!isTTSSupported || currentDbName !== 'quote.db') return;
+
+      if (currentUtterance && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        currentUtterance = null;
+        activeUtterances = 0;
+        button.textContent = '🔊 Play';
+        button.style.background = '#4caf50';
+      } else if (defaultOdiaVoice) {
+        currentUtterance = new SpeechSynthesisUtterance(quoteText);
+        currentUtterance.voice = defaultOdiaVoice;
+        currentUtterance.lang = defaultOdiaVoice.lang;
+        currentUtterance.rate = 0.7;
+        currentUtterance.pitch = 1.0;
+        currentUtterance.volume = 4.0;
+        currentUtterance.onend = () => {
+          activeUtterances--;
+          if (activeUtterances === 0) {
             button.textContent = '🔊 Play';
-            button.style.background = '#ff6b6b';
+            button.style.background = '#4caf50';
             currentUtterance = null;
-          };
-        }
+          }
+        };
+        activeUtterances++;
+        window.speechSynthesis.speak(currentUtterance);
+        button.textContent = '⏹ Stop';
+        button.style.background = '#1976d2';
       }
     }
 
-    // Display one random quote per day
     function displayDailyQuote() {
       const today = getCurrentDate();
       const storageKey = `dailyQuote_${currentDbName}`;
@@ -402,11 +451,38 @@
         localStorage.setItem(`quoteDate_${currentDbName}`, today);
         displayQuote(quote);
       } else {
-        document.getElementById('quoteContainer').innerHTML = '<p class="no-quotes-text text-xl md:text-2xl text-center">No quotes today, come back tomorrow! 😊</p>';
+        document.getElementById('quoteContainer').innerHTML = '<p class="no-quotes-text text-lg md:text-xl">No quotes today, check back tomorrow! 😊</p>';
+        document.getElementById('navButtons').classList.add('hidden');
       }
     }
 
-    // Display all quotes with filters
+    function displayPagedQuote() {
+      const container = document.getElementById('quoteContainer');
+      const navButtons = document.getElementById('navButtons');
+      const prevButton = document.getElementById('prevButton');
+      const nextButton = document.getElementById('nextButton');
+
+      if (quotes.length === 0) {
+        container.innerHTML = '<p class="no-quotes-text text-lg md:text-xl">No quotes found, try another theme! 🌈</p>';
+        navButtons.classList.add('hidden');
+        return;
+      }
+
+      const quote = quotes[currentPage];
+      const escapedQuote = quote.qte.replace(/'/g, "\\'");
+      container.innerHTML = `
+        <div class="quote-card">
+          <p class="quote-text italic mb-3">"${quote.qte}"</p>
+          <p class="author-text">— ${quote.author_name}</p>
+          <p class="category-text">${quote.category_name}</p>
+          ${isTTSSupported && currentDbName === 'quote.db' ? `<button class="toggle-button mt-3" onclick="toggleSpeech('${escapedQuote}', this)">🔊 Play</button>` : ''}
+        </div>
+      `;
+      navButtons.classList.remove('hidden');
+      prevButton.disabled = currentPage === 0;
+      nextButton.disabled = currentPage === quotes.length - 1;
+    }
+
     function displayAllQuotes() {
       const category = document.getElementById('categoryFilter').value;
       const author = document.getElementById('authorFilter').value;
@@ -432,49 +508,30 @@
         stmt.bind(params);
       }
 
-      const quotes = [];
+      quotes = [];
       while (stmt.step()) {
         quotes.push(stmt.getAsObject());
       }
       stmt.free();
 
-      const container = document.getElementById('quoteContainer');
-      container.innerHTML = '';
-
-      if (quotes.length === 0) {
-        container.innerHTML = '<p class="no-quotes-text text-xl md:text-2xl text-center">No quotes found, try another theme! 🌟</p>';
-        return;
-      }
-
-      quotes.forEach(quote => {
-        const quoteCard = document.createElement('div');
-        quoteCard.className = 'quote-card';
-        const escapedQuote = quote.qte.replace(/'/g, "\\'");
-        quoteCard.innerHTML = `
-          <p class="quote-text italic mb-4">"${quote.qte}"</p>
-          <p class="author-text font-bold">— ${quote.author_name}</p>
-          <p class="category-text">${quote.category_name}</p>
-          ${isSpeechSupported ? `<button class="toggle-button mt-4" onclick="toggleSpeech('${escapedQuote}', this)">🔊 Play</button>` : ''}
-        `;
-        container.appendChild(quoteCard);
-      });
+      currentPage = 0;
+      displayPagedQuote();
     }
 
-    // Display single quote
     function displayQuote(quote) {
       const container = document.getElementById('quoteContainer');
       const escapedQuote = quote.qte.replace(/'/g, "\\'");
       container.innerHTML = `
         <div class="quote-card">
-          <p class="quote-text italic mb-4">"${quote.qte}"</p>
-          <p class="author-text font-bold">— ${quote.author_name}</p>
+          <p class="quote-text italic mb-3">"${quote.qte}"</p>
+          <p class="author-text">— ${quote.author_name}</p>
           <p class="category-text">${quote.category_name}</p>
-          ${isSpeechSupported ? `<button class="toggle-button mt-4" onclick="toggleSpeech('${escapedQuote}', this)">🔊 Play</button>` : ''}
+          ${isTTSSupported && currentDbName === 'quote.db' ? `<button class="toggle-button mt-3" onclick="toggleSpeech('${escapedQuote}', this)">🔊 Play</button>` : ''}
         </div>
       `;
+      document.getElementById('navButtons').classList.add('hidden');
     }
 
-    // Update UI based on mode
     function updateUI() {
       const mode = document.getElementById('modeSelect').value;
       const categoryFilter = document.getElementById('categoryFilter');
@@ -492,20 +549,62 @@
       }
     }
 
-    // Event listeners
+    function showNextQuote() {
+      if (currentPage < quotes.length - 1) {
+        currentPage++;
+        displayPagedQuote();
+      }
+    }
+
+    function showPrevQuote() {
+      if (currentPage > 0) {
+        currentPage--;
+        displayPagedQuote();
+      }
+    }
+
+    let touchStartX = 0;
+    let touchEndX = 0;
+
+    document.getElementById('quoteContainer').addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    document.getElementById('quoteContainer').addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      const mode = document.getElementById('modeSelect').value;
+      if (mode === 'all') {
+        if (touchEndX < touchStartX - 50) {
+          showNextQuote();
+        } else if (touchEndX > touchStartX + 50) {
+          showPrevQuote();
+        }
+      }
+    });
+
     document.getElementById('databaseSelect').addEventListener('change', (e) => {
       if (currentUtterance && window.speechSynthesis.speaking) {
         window.speechSynthesis.cancel();
         currentUtterance = null;
+        activeUtterances = 0;
       }
       currentDbName = e.target.value;
+      initializeVoices();
       initDb(currentDbName);
     });
-    document.getElementById('modeSelect').addEventListener('change', updateUI);
+    document.getElementById('modeSelect').addEventListener('change', () => {
+      if (currentUtterance && window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        currentUtterance = null;
+        activeUtterances = 0;
+      }
+      updateUI();
+    });
     document.getElementById('categoryFilter').addEventListener('change', loadQuotes);
     document.getElementById('authorFilter').addEventListener('change', loadQuotes);
+    document.getElementById('prevButton').addEventListener('click', showPrevQuote);
+    document.getElementById('nextButton').addEventListener('click', showNextQuote);
 
-    // Load and display quotes based on mode
     function loadQuotes() {
       const mode = document.getElementById('modeSelect').value;
       if (mode === 'daily') {
@@ -515,7 +614,6 @@
       }
     }
 
-    // Initialize with default database
     initDb(currentDbName);
   </script>
 </body>
