@@ -97,6 +97,12 @@
     .category-text {
       color: #7b1fa2;
     }
+    .page-indicator {
+      color: #e91e63;
+      text-align: center;
+      font-size: 1.2rem;
+      margin-top: 0.5rem;
+    }
     .toggle-button {
       background: #4caf50;
       border: 3px solid #ffca28;
@@ -145,6 +151,9 @@
       .category-text {
         font-size: 0.9rem;
       }
+      .page-indicator {
+        font-size: 1rem;
+      }
       .progress-bar {
         font-size: 1rem;
         height: 25px;
@@ -177,6 +186,9 @@
       }
       .category-text {
         font-size: 1rem;
+      }
+      .page-indicator {
+        font-size: 1.3rem;
       }
     }
   </style>
@@ -477,6 +489,7 @@
           <p class="category-text">${quote.category_name}</p>
           ${isTTSSupported && currentDbName === 'quote.db' ? `<button class="toggle-button mt-3" onclick="toggleSpeech('${escapedQuote}', this)">🔊 Play</button>` : ''}
         </div>
+        <p class="page-indicator">Page ${currentPage + 1} of ${quotes.length}</p>
       `;
       navButtons.classList.remove('hidden');
       prevButton.disabled = currentPage === 0;
